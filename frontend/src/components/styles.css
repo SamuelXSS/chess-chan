@@ -1,0 +1,77 @@
+.panelContainer {
+  width: 100vw;
+  height: 100vh;
+  background-color: #45753c;
+}
+
+.panelHeader {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  height: 50px;
+  background-color: #45753c;
+}
+
+.panelFooter {
+  height: 80px;
+  background-color: #45753c;
+}
+
+.queueListContainer {
+  height: 315px;
+}
+
+.queueContent {
+  transition: all 0.3s ease;
+}
+
+.queueContent:hover{
+  background-color: #e7e7e7;
+}
+
+.queueEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: #ccc;
+}
+
+.divider {
+  height: 3px;
+  background-color: #45753c;
+}
+
+.playerTitle {
+  background-color: #b23330;
+  border-radius: 0.3rem;
+  color: #fff !important;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-right: 0.3rem;
+  padding: 0.2rem 0.3rem;
+}
+
+.Mui-selected {
+  border: 1px solid #45753c !important;
+  border-radius: 5px !important;
+}
+
+.MuiMenuItem-root:hover {
+  transition: all 0.3s !important;
+}
+
+.MuiMenuItem-root:hover {
+  border-radius: 5px !important;
+}
+
+.live-badge {
+  color: #fff;
+  padding: 4px;
+  font-size: 10px;
+  border-radius: 5px;
+  background-color: #b23330;
+}

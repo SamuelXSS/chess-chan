@@ -1,0 +1,72 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.3",
+    "@mui/material": "^5.14.3",
+    "@mui/styles": "^5.14.4",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.4.0",
+    "jsonwebtoken": "^9.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.2",
+    "react-scripts": "5.0.1",
+    "react-toastify": "^8.1.0",
+    "socket.io-client": "^4.7.2",
+    "tmi.js": "^1.8.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "webpack-dev-server --mode development",
+    "build": "webpack --mode production",
+    "test": "react-scripts test",
+    "cert": "./bin/generate_cert.sh server",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.7.5",
+    "@babel/core": "^7.7.5",
+    "@babel/preset-env": "^7.7.6",
+    "@babel/preset-react": "^7.7.4",
+    "babel-loader": "^8.0.0",
+    "clean-webpack-plugin": "^1.0.1",
+    "css-loader": "^3.4.0",
+    "file-loader": "^1.1.11",
+    "html-webpack-plugin": "^4.0.0-beta.11",
+    "sass-loader": "^7.3.1",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.41.3",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
+  }
+}
