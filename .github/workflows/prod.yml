@@ -20,4 +20,4 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             cd ~
-            ./api_prod_deploy_script.sh
+            whoami
