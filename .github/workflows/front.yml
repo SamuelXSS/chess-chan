@@ -22,5 +22,6 @@ jobs:
             nvm use 16.18.0
             export NVM_DIR=~/.nvm
             source ~/.nvm/nvm.sh
+            nvm use 16.18.0
             cd ~
             ./front_prod_deploy_script.sh
