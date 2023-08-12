@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
   joinQueue(socket);
 });
 
-const port = process.env.NODE_ENV == 'dev' ? 3000 : 3001;
+const port = 3000;
 
 server.listen(port, () => {
   console.log(`Listening server on ${port}`);
