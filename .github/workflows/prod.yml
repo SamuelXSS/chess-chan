@@ -1,4 +1,4 @@
-name: [PROD-API]
+name: "[PROD-API]"
 
 on:
   push:
