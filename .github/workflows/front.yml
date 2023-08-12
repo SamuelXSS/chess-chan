@@ -1,4 +1,4 @@
-name: "[PROD-FRONT]"
+name: '[PROD-FRONT]'
 
 on:
   push:
@@ -19,5 +19,8 @@ jobs:
           port: ${{ secrets.PORT }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
+            nvm use 16.18.0
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
             cd ~
             ./front_prod_deploy_script.sh
