@@ -1,4 +1,4 @@
-name: [PROD-FRONT]
+name: "[PROD-FRONT]"
 
 on:
   push:
