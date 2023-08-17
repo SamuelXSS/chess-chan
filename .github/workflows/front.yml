@@ -3,7 +3,7 @@ name: '[PROD-FRONT]'
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   build:
