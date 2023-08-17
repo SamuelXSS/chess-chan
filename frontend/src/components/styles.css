@@ -1,10 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,600;0,6..12,700;1,6..12,400&display=swap');
+
 .panelContainer {
+  font-family: 'Nunito Sans', sans-serif;
   width: 100vw;
   height: 100vh;
   background-color: #45753c;
 }
 
 .panelHeader {
+  font-family: 'Nunito Sans', sans-serif;
   padding: 10px;
   display: flex;
   align-items: center;
@@ -15,23 +19,28 @@
 }
 
 .panelFooter {
+  font-family: 'Nunito Sans', sans-serif;
   height: 80px;
   background-color: #45753c;
 }
 
 .queueListContainer {
+  font-family: 'Nunito Sans', sans-serif;
   height: 315px;
 }
 
 .queueContent {
+  font-family: 'Nunito Sans', sans-serif;
   transition: all 0.3s ease;
 }
 
 .queueContent:hover {
+  font-family: 'Nunito Sans', sans-serif;
   background-color: #e7e7e7;
 }
 
 .queueEmpty {
+  font-family: 'Nunito Sans', sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,11 +49,13 @@
 }
 
 .divider {
+  font-family: 'Nunito Sans', sans-serif;
   height: 3px;
   background-color: #45753c;
 }
 
 .playerTitle {
+  font-family: 'Nunito Sans', sans-serif;
   background-color: #b23330;
   border-radius: 0.3rem;
   color: #fff !important;
@@ -56,19 +67,23 @@
 }
 
 .Mui-selected {
+  font-family: 'Nunito Sans', sans-serif;
   border: 1px solid #45753c !important;
   border-radius: 5px !important;
 }
 
 .MuiMenuItem-root:hover {
+  font-family: 'Nunito Sans', sans-serif;
   transition: all 0.3s !important;
 }
 
 .MuiMenuItem-root:hover {
+  font-family: 'Nunito Sans', sans-serif;
   border-radius: 5px !important;
 }
 
 .live-badge {
+  font-family: 'Nunito Sans', sans-serif;
   color: #fff;
   padding: 4px;
   font-size: 10px;
@@ -77,14 +92,17 @@
 }
 
 .buttonNext:active {
+  font-family: 'Nunito Sans', sans-serif;
   transition: transform 0.1s ease-out;
 }
 
 .buttonNext:active {
+  font-family: 'Nunito Sans', sans-serif;
   transform: translateY(3px);
 }
 
 .next {
+  font-family: 'Nunito Sans', sans-serif;
   margin-left: 6px;
   margin-top: 5px;
 }
