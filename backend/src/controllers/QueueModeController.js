@@ -1,7 +1,8 @@
 import QueueMode from '../models/QueueMode.js';
+import { errorHandler } from '../services/handler.js';
 
 export default {
-  list: async (req, res) => {
+  async list(req, res) {
     try {
       const modes = await QueueMode.find();
 
@@ -33,7 +34,7 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  show: async (req, res) => {
+  async show(req, res) {
     try {
       const { mode } = req.query;
       const queryMode = await QueueMode.findOne({ mode });
@@ -43,7 +44,7 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  create: async (req, res) => {
+  async create(req, res) {
     try {
       const { mode, time, formattedTime } = req.body;
 
@@ -64,6 +65,6 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  update: async (req, res) => {},
-  delete: async (req, res) => {},
+  async update(req, res) {},
+  async delete(req, res) {},
 };

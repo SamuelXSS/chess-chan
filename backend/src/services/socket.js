@@ -2,7 +2,6 @@ import { io } from '../server.js';
 
 const joinQueue = (socket) =>
   socket.on('queue:join', (streamerId) => {
-    console.log('Joined: ', streamerId);
     socket.join(streamerId);
   });
 
@@ -11,9 +10,13 @@ const newChannelInserted = (socket) =>
     io.emit('newChannelInserted', data)
   );
 
+const handleSendBotMessage = (socket) =>
+  socket.on('handleSendBotMessage', (data) =>
+    io.emit('handleSendBotMessage', data)
+  );
+
 const newPlayerOnQueue = (socket) =>
   socket.on('queue:update', (streamerId, queue) => {
-    console.log('New user', streamerId, queue);
     io.to(streamerId).emit('queue:update', queue);
   });
 
@@ -27,4 +30,10 @@ const socketLogger = (socket) => {
   });
 };
 
-export { socketLogger, joinQueue, newChannelInserted, newPlayerOnQueue };
+export {
+  socketLogger,
+  joinQueue,
+  newChannelInserted,
+  newPlayerOnQueue,
+  handleSendBotMessage,
+};

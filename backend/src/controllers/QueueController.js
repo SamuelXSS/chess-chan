@@ -2,14 +2,21 @@ import Queue from '../models/Queue.js';
 import Streamer from '../models/Streamer.js';
 import User from '../models/User.js';
 import UserQueue from '../models/UserQueue.js';
+import { io } from '../server.js';
 import { errorHandler } from '../services/handler.js';
-import { validateChessName } from './client/index.js';
+import { validateChessName, getGameArchieves } from './client/index.js';
+import { createWinnerMessage, formatQueue } from './functions/index.js';
 
 export default {
-  list: async (req, res) => {
+  async list(req, res) {
     try {
       const { queueId } = req.query;
       const queue = await Queue.findOne({ _id: queueId }).populate('mode');
+
+      if (!queue) {
+        return res.status(404).json({ message: 'This queue does not exist' });
+      }
+
       const userQueue = await UserQueue.find({ queue: queueId })
         .populate({
           path: 'user',
@@ -25,27 +32,6 @@ export default {
         })
         .exec();
 
-      const formatQueue = (queue) => {
-        return queue.map((q, index) => {
-          const position = index + 1;
-          const { mode } = q.queue.mode;
-          const liveStatus =
-            index === 0 ? '[LIVE 🔴]' : index === 1 ? '[NEXT 🟡]' : '';
-          const chessUsername = q.user.chessUsername;
-          const rating = q.user.rating[mode.toLowerCase()];
-
-          return {
-            chat: `${position}. ${chessUsername} (${rating}) ${liveStatus}`,
-            queue: {
-              id: q._id,
-              username: chessUsername,
-              position,
-              rating,
-            },
-          };
-        });
-      };
-
       let formattedMode = `${queue.mode.mode} (${queue.mode.formattedTime})`;
 
       const formattedQueue = userQueue.length !== 0 && formatQueue(userQueue);
@@ -54,7 +40,7 @@ export default {
 
       const usersOnQueueMessage =
         userQueue.length > 0
-          ? `⏱️ ${formattedMode} Queue (${userQueue.length} ${
+          ? `⏱️ ${formattedMode} (${userQueue.length} ${
               userQueue.length === 1 ? 'player' : 'players'
             }): ${playersList.join(', ')}`
           : '';
@@ -64,6 +50,7 @@ export default {
         : [];
 
       return res.json({
+        isClosed: queue.isClosed,
         mode: queue.mode.time,
         formattedMode,
         queueModeId: queue.mode._id,
@@ -75,34 +62,34 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  show: async (req, res) => {},
-  create: async (req, res) => {
+  async addToQueue(req, res) {
     try {
       const { twitchUsername, chessUsername, streamerChannel } = req.body;
 
+      const chessData = await validateChessName(chessUsername);
       const {
-        chess_bullet: {
-          last: { rating: bulletRating },
-        },
-        chess_blitz: {
-          last: { rating: blitzRating },
-        },
-        chess_rapid: {
-          last: { rating: rapidRating },
-        },
-      } = await validateChessName(chessUsername);
+        chess_bullet: { last: { rating: bulletRating = 0 } } = {},
+        chess_blitz: { last: { rating: blitzRating = 0 } } = {},
+        chess_rapid: { last: { rating: rapidRating = 0 } } = {},
+        avatar,
+        url,
+        player_id: chessUserId,
+        title,
+      } = chessData;
+
+      const chessFormattedUsername = url.split('member/')[1];
 
       const streamer = await Streamer.findOne({
         twitchUsername: streamerChannel,
       });
 
-      const queue = await Queue.findOne({ streamer: streamer._id }).populate(
-        'streamer mode'
-      );
-
       if (!streamer) {
         return res.status(404).json({ message: 'Streamer does not exist' });
       }
+
+      const queue = await Queue.findOne({ streamer: streamer._id })
+        .populate('streamer mode')
+        .exec();
 
       if (!queue) {
         return res
@@ -116,32 +103,29 @@ export default {
           .json({ message: 'The queue is currently closed' });
       }
 
-      if (queue.length === queue.size) {
+      if (queue.usersOnQueue === queue.size) {
         return res.status(404).json({ message: 'The queue is currently full' });
       }
 
-      const user = await User.findOneAndUpdate(
-        { twitchUsername },
-        {
-          chessUsername,
-          rating: {
-            bullet: bulletRating,
-            blitz: blitzRating,
-            rapid: rapidRating,
-          },
-        }
-      );
+      const userExists = await User.findOne({ twitchUsername });
 
-      if (!user) {
-        const newUser = await User.create({
-          twitchUsername,
-          chessUsername,
-          rating: {
-            bullet: bulletRating,
-            blitz: blitzRating,
-            rapid: rapidRating,
-          },
-        });
+      const userData = {
+        avatar,
+        twitchUsername,
+        chessUsername: chessFormattedUsername,
+        chessUserId,
+        title: title || null,
+        rating: {
+          bullet: bulletRating || 0,
+          blitz: blitzRating || 0,
+          rapid: rapidRating || 0,
+        },
+      };
+
+      let userResponse;
+
+      if (!userExists) {
+        const newUser = await User.create(userData);
 
         await UserQueue.create({
           user: newUser._id,
@@ -150,62 +134,207 @@ export default {
 
         const rating = newUser.rating[queue.mode.mode.toLowerCase()];
 
-        return res.json({
-          message: 'User added to queue',
-          user: {
-            id: newUser._id,
-            username: newUser.chessUsername,
-            rating,
-          },
+        userResponse = {
+          id: newUser._id,
+          username: chessFormattedUsername,
+          chessUserId,
+          rating,
+          title,
+          avatar,
+        };
+      } else {
+        const userOnQueue = await UserQueue.findOne({
+          user: userExists._id,
+          queue: queue._id,
         });
+
+        if (userOnQueue) {
+          return res.status(400).json({ message: 'User already on queue' });
+        }
+
+        await UserQueue.create({
+          user: userExists._id,
+          queue: queue._id,
+        });
+
+        const userRating = {
+          blitz: blitzRating,
+          bullet: bulletRating,
+          rapid: rapidRating,
+        };
+        const rating = userRating[queue.mode.mode.toLowerCase()];
+
+        userResponse = {
+          id: userExists._id,
+          username: chessFormattedUsername,
+          chessUserId,
+          rating,
+          title,
+          avatar,
+        };
       }
 
-      const userOnQueue = await UserQueue.findOne({
-        user: user._id,
-        queue: queue._id,
-      });
-
-      // if (userOnQueue) {
-      //   return res.status(400).json({ message: 'User already on queue' });
-      // }
-
-      await UserQueue.create({
-        user: user._id,
-        queue: queue._id,
-      });
-
-      const rating = user.rating[queue.mode.mode.toLowerCase()];
+      io.to(streamerChannel).emit('queue:update', userResponse);
 
       return res.json({
         message: 'User added to queue',
-        user: {
-          id: user._id,
-          username: user.chessUsername,
-          rating,
-        },
+        user: userResponse,
       });
     } catch (err) {
       console.error('Error adding user to queue:', err);
       res.status(500).json({ message: 'Internal server error' });
     }
   },
-  removeFromQueue: async (req, res) => {
+  async removeFromQueue(req, res) {
     try {
-      const { userId } = req.params;
+      const { userId, queueId } = req.params;
+      const { isNext, nextUserId, isDeleting } = req.query;
 
-      const removedUserQueue = await UserQueue.findByIdAndRemove(userId);
+      if (isNext && JSON.parse(isNext)) {
+        const userQueue = await UserQueue.findOne({
+          queue: queueId,
+          user: userId,
+        })
+          .populate('user')
+          .populate({
+            path: 'queue',
+            model: 'Queue',
+            populate: {
+              path: 'streamer',
+              model: 'Streamer',
+            },
+          });
 
-      if (!removedUserQueue) {
-        return res.status(404).json({ message: 'UserQueue not found' });
+        if (!userQueue) {
+          return res.status(404).json({ message: 'Users on queue not found' });
+        }
+
+        const {
+          user: {
+            chessUsername: userChessUsername,
+            twitchUsername: userTwitchUsername,
+          },
+          queue: {
+            streamer: {
+              twitchUsername,
+              chessUsername: streamerChessUsername,
+              chessUserId,
+            },
+          },
+        } = userQueue;
+
+        const game = await getGameArchieves(
+          streamerChessUsername,
+          chessUserId,
+          userChessUsername
+        );
+
+        if (game === 'No games found') {
+          return res.status(404).json({ message: 'No games found' });
+        }
+
+        const resultGameMessage = createWinnerMessage(
+          game,
+          streamerChessUsername,
+          userChessUsername,
+          userTwitchUsername
+        );
+
+        await UserQueue.findOneAndRemove({
+          user: userId,
+          queue: queueId,
+        });
+
+        if (nextUserId) {
+          const nextPlayerQueue = await UserQueue.findOne({
+            queue: queueId,
+            user: nextUserId,
+          })
+            .populate('user')
+            .populate({
+              path: 'queue',
+              model: 'Queue',
+              populate: {
+                path: 'streamer',
+                model: 'Streamer',
+              },
+            });
+
+          io.emit('handleNextQueuePlayer', {
+            channelId: twitchUsername,
+            resultGameMessage,
+            ...(nextPlayerQueue
+              ? `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+              : {}),
+          });
+
+          return res.json({
+            message: 'Last user removed from queue and next called',
+          });
+        }
+
+        io.emit('handleNextQueuePlayer', {
+          channelId: twitchUsername,
+          resultGameMessage,
+        });
+
+        return res.json({
+          message: 'Last user removed from queue and next called',
+        });
+      } else {
+        const removedUserQueue = await UserQueue.findOneAndRemove({
+          user: userId,
+          queue: queueId,
+        })
+          .populate('user')
+          .populate({
+            path: 'queue',
+            model: 'Queue',
+            populate: {
+              path: 'streamer',
+              model: 'Streamer',
+            },
+          });
+
+        if (!removedUserQueue) {
+          return res.status(404).json({ message: 'UserQueue not found' });
+        }
+
+        if (isDeleting && JSON.parse(isDeleting) && nextUserId) {
+          const {
+            queue: {
+              streamer: { twitchUsername },
+            },
+          } = removedUserQueue;
+
+          const nextPlayerQueue = await UserQueue.findOne({
+            queue: queueId,
+            user: nextUserId,
+          })
+            .populate('user')
+            .populate({
+              path: 'queue',
+              model: 'Queue',
+              populate: {
+                path: 'streamer',
+                model: 'Streamer',
+              },
+            });
+
+          io.emit('handleSendBotMessage', {
+            channelId: twitchUsername,
+            message: `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`,
+          });
+        }
+
+        return res.json({ message: 'User removed from the queue' });
       }
-
-      return res.json({ message: 'User removed from the queue' });
     } catch (err) {
       console.error('Error removing user from queue:', err);
       res.status(500).json({ message: 'Internal server error' });
     }
   },
-  update: async (req, res) => {
+  async update(req, res) {
     try {
       const { queueId, mode, size, isClosed } = req.body;
 
@@ -219,10 +348,11 @@ export default {
         .json({ message: 'Internal server error', error: err });
     }
   },
-  delete: async (req, res) => {
+  async delete(req, res) {
+    const { queueId } = req.params;
     try {
-      await UserQueue.deleteMany({});
-
+      await UserQueue.deleteMany({ queue: queueId });
+      await Queue.findOneAndUpdate({ queue: queueId }, { usersOnQueue: 0 });
       return res.json({ message: 'Queue cleared successfully' });
     } catch (err) {
       console.error('Error clearing queue:', err);

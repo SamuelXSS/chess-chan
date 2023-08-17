@@ -15,12 +15,13 @@ const client = new tmi.Client({
 
 const whitelist = [];
 
+
 socket.on('newChannelInserted', async () => {
   try {
     const channels = await getStreamersChannels();
     if (channels !== null) {
       client.opts.channels = channels;
-
+      
       await client.disconnect();
       await client.connect();
       console.log('Bot connected to updated channels:', channels);
@@ -28,7 +29,7 @@ socket.on('newChannelInserted', async () => {
       console.log('Failed to fetch updated channels list.');
     }
   } catch (err) {
-    console.log(err);
+
   }
 });
 
@@ -49,7 +50,7 @@ socket.on('newChannelInserted', async () => {
       console.log('Failed to fetch channels list.');
     }
   } catch (err) {
-    console.log(err);
+
   }
 })();
 

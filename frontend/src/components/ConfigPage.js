@@ -156,7 +156,12 @@ function ConfigPage() {
         <div className="inputBlock">
           <button type="submit" className="button" onClick={handleTwitch}>
             {isLoading && <CircularProgress size={20} color="secondary" />}
-            {isSaved && <img src="https://uploads.chess-chan.com/images/checked.png" alt="checked" />}
+            {isSaved && (
+              <img
+                src="https://uploads.chess-chan.com/images/checked.png"
+                alt="checked"
+              />
+            )}
             {!isLoading && !isSaved && language.savePreferences}
           </button>
         </div>

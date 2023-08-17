@@ -1,10 +1,10 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { ThemeProvider } from '@emotion/react';
 import ConfigPage from './components/ConfigPage';
 import theme from './assets/theme';
-import 'react-toastify/dist/ReactToastify.css';
+import { createRoot } from 'react-dom/client';
+import { ThemeProvider } from '@emotion/react';
 import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const rootElement = document.getElementById('root');
 const root = createRoot(rootElement);

@@ -7,17 +7,15 @@ import Queue from '../models/Queue.js';
 import { validateChessName } from './client/index.js';
 
 export default {
-  list: async (req, res) => {
+  async list(req, res) {
     try {
       const streamers = await Streamer.find();
       const formattedStreamers = [];
 
       for (const streamer of streamers) {
-        console.log(streamer);
         const { size: queueSize } = await Queue.findOne({
           streamer: streamer._id,
         });
-        console.log(queueSize);
 
         formattedStreamers.push({
           ...streamer._doc,
@@ -30,7 +28,7 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  show: async (req, res) => {
+  async show(req, res) {
     try {
       const { userId, twitchUsername, channelId } = req.query;
       const streamer = await Streamer.findOne({
@@ -45,7 +43,7 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  create: async (req, res) => {
+  async create(req, res) {
     try {
       const { chessUsername, userId, channelId, language, queueSize } =
         req.body;
@@ -68,9 +66,12 @@ export default {
         chess_rapid: {
           last: { rating: rapidRating },
         },
+        avatar,
+        url,
+        player_id: chessUserId,
       } = await validateChessName(chessUsername);
 
-      console.log(bulletRating, blitzRating, rapidRating);
+      const chessFormattedUsername = url.split('member/')[1];
 
       const hasStreamer = await Streamer.find({
         twitchUsername: data[0].display_name,
@@ -83,7 +84,9 @@ export default {
       }
 
       const streamer = await Streamer.create({
-        chessUsername,
+        avatar,
+        chessUserId,
+        chessUsername: chessFormattedUsername,
         userId,
         channelId,
         twitchUsername: data[0].display_name,
@@ -113,7 +116,7 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  update: async (req, res) => {
+  async update(req, res) {
     try {
       const { chessUsername, userId, channelId, language, queueSize } =
         req.body;
@@ -150,5 +153,5 @@ export default {
       return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
-  destroy: async (req, res) => {},
+  async destroy(req, res) {},
 };

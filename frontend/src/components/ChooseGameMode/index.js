@@ -1,8 +1,9 @@
-import { IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import QueueOnOfSwitch from '../QueueOnOfSwitch';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SelectGameMode from './SelectGameMode';
+import { IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { api } from '../../services/api';
 
 const ChooseGameMode = ({
   setQueue,
@@ -10,15 +11,23 @@ const ChooseGameMode = ({
   setSelectedGameMode,
   queueModes,
   queueId,
+  isQueueOpened,
+  setIsQueueOpened,
 }) => {
-  const [isQueueOpened, setIsQueueOpened] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleChangeQueue = (e) => {
-    setIsQueueOpened(e.target.checked);
+  const handleChangeQueue = async (e) => {
+    try {
+      await api.put('/queue', {
+        queueId,
+        isClosed: e.target.checked === true ? false : true,
+      });
+      setIsQueueOpened(!isQueueOpened);
+    } catch (err) {}
   };
 
-  const handleClearQueue = () => {
+  const handleClearQueue = async () => {
+    await api.delete(`/queue/${queueId}/clear`);
     setQueue([]);
     handleMenuClose();
   };

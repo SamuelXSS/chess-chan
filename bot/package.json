@@ -1,15 +1,17 @@
 {
-  "name": "chessQueue",
+  "name": "bot",
   "version": "1.0.0",
   "main": "src/index.js",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon --experimental-modules ."
+    "start:dev": "NODE_ENV=dev nodemon --experimental-modules .",
+    "start:prod": "NODE_ENV=prod nodemon --experimental-modules ."
   },
   "dependencies": {
     "axios": "^1.4.0",
     "chess-web-api": "^1.1.2",
+    "dotenv": "^16.3.1",
     "jsonfile": "^6.1.0",
     "socket.io-client": "^4.7.2",
     "tmi.js": "^1.8.5",

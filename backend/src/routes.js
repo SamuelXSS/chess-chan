@@ -11,10 +11,13 @@ routes.post('/streamers', StreamerController.create);
 routes.put('/streamers', StreamerController.update);
 
 routes.get('/queue', QueueController.list);
-routes.post('/queue', QueueController.create);
+routes.post('/queue', QueueController.addToQueue);
 routes.put('/queue', QueueController.update);
-routes.delete('/clearQueue', QueueController.delete);
-routes.delete('/queue/:userId/remove', QueueController.removeFromQueue);
+routes.delete('/queue/:queueId/clear', QueueController.delete);
+routes.delete(
+  '/queue/:queueId/player/:userId/remove',
+  QueueController.removeFromQueue
+);
 
 routes.get('/queueMode', QueueModeController.list);
 routes.get('/queueMode', QueueModeController.show);

@@ -10,7 +10,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: ['Inter', 'sans-serif'].join(','),
+    fontFamily: ['Nunito Sans', 'sans-serif'].join(','),
   },
 });
 
