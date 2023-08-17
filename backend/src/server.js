@@ -7,6 +7,7 @@ import {
   joinQueue,
   newChannelInserted,
   newPlayerOnQueue,
+  handleSendBotMessage,
 } from './services/socket.js';
 import { Server } from 'socket.io';
 import connectToDB from './database/connection.js';
@@ -46,6 +47,7 @@ io.on('connection', (socket) => {
   newChannelInserted(socket);
   newPlayerOnQueue(socket);
   joinQueue(socket);
+  handleSendBotMessage(socket);
 });
 
 const port = 3000;

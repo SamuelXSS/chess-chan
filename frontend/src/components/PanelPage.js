@@ -1,39 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import QueueList from './QueueList';
-import ChooseGameMode from './ChooseGameMode';
-import {
-  Container,
-  Typography,
-  Grid,
-  Divider,
-  Tooltip,
-  Skeleton,
-} from '@mui/material';
+import ErrorPage from './Error';
+import image from '../assets/images';
+import PanelHeader from './PanelHeader';
+import { Grid, Divider, Tooltip } from '@mui/material';
 import { decodeToken } from '../utils/authentication.js';
 import { api } from '../services/api';
 import { socket } from '../services/socket';
 import './styles.css';
 import '../App.css';
 import '../index.css';
-import ErrorPage from './Error';
-import image from '../assets/images';
-import PanelHeader from './PanelHeader';
 
 const PanelPage = () => {
-  const [streamer, setStreamer] = useState(null);
+  const [queue, setQueue] = useState([]);
   const [gameModeName, setGameModeName] = useState('');
+  const [queueId, setQueueId] = useState('');
+  const [streamer, setStreamer] = useState(null);
   const [gameMode, setGameMode] = useState(null);
   const [selectedGameMode, setSelectedGameMode] = useState(null);
-  const [isStreamer, setIsStreamer] = useState(false);
-  const [queueId, setQueueId] = useState('');
-  const [queueSize, setQueueSize] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [queue, setQueue] = useState([]);
   const [queueModes, setQueueModes] = useState(null);
+  const [isStreamer, setIsStreamer] = useState(false);
+  const [queueSize, setQueueSize] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isQueueOpened, setIsQueueOpened] = useState(true);
   const [twitch] = useState(window.Twitch.ext);
 
-  const fetchAuthentication = async () => {
+  const fetchData = async () => {
     try {
+      setIsLoading(true);
+
       const authentication = await new Promise((resolve) => {
         twitch.onAuthorized(resolve);
       });
@@ -42,41 +37,29 @@ const PanelPage = () => {
       const {
         data: { streamer: streamerData },
       } = await api.get(`/streamer?channelId=${authentication.channelId}`);
-      console.log(streamerData);
+      !streamerData && setStreamer(false);
 
       setQueueId(streamerData.queueId);
       setStreamer(streamerData);
       setIsStreamer(role === 'broadcaster');
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching authentication:', error);
-      setIsLoading(false);
-    }
-  };
 
-  const fetchQueue = async () => {
-    try {
-      setIsLoading(true);
       const {
-        data: { queue, mode, formattedMode, queueModeId: id, size },
-      } = await api.get(`/queue?queueId=${queueId}`);
+        data: { queue, mode, formattedMode, queueModeId: id, size, isClosed },
+      } = await api.get(`/queue?queueId=${streamerData.queueId}`);
 
       setQueue(queue);
       setGameMode(mode);
       setQueueSize(size);
       setGameModeName(formattedMode);
+      setIsQueueOpened(!isClosed);
       setSelectedGameMode(id);
-      setIsLoading(false);
-    } catch (error) {
-      setIsLoading(false);
-    }
-  };
 
-  const fetchGameModes = async () => {
-    try {
       const response = await api.get('/queueMode');
       setQueueModes(response.data.modes);
+
+      setIsLoading(false);
     } catch (error) {
+      console.error('Error fetching data:', error);
       setIsLoading(false);
     }
   };
@@ -87,10 +70,8 @@ const PanelPage = () => {
   };
 
   useEffect(() => {
-    fetchAuthentication();
-    fetchQueue();
-    fetchGameModes();
-  }, [twitch, queueId, selectedGameMode]);
+    fetchData();
+  }, [twitch, streamer?.twitchUsername, selectedGameMode]);
 
   useEffect(() => {
     socket.emit('queue:join', streamer?.twitchUsername);
@@ -101,9 +82,35 @@ const PanelPage = () => {
     };
   }, [streamer?.twitchUsername]);
 
+  const handleNextPlayer = async () => {
+    try {
+      await api.delete(
+        `/queue/${queueId}/player/${queue[0].id}/remove?isNext=true${
+          queue[1] ? `&nextUserId=${queue[1].id}` : ''
+        }`
+      );
+
+      const newQueue = queue.filter((item) => item.id !== queue[0].id);
+
+      setQueue(newQueue);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
-    <Container className="panelContainer">
-      {streamer ? (
+    <Grid
+      container
+      alignItems="center"
+      justifyContent="center"
+      style={{
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#45753c',
+        paddingLeft: 10,
+      }}
+    >
+      {streamer || isLoading ? (
         <>
           <PanelHeader
             gameModeName={gameModeName}
@@ -117,33 +124,77 @@ const PanelPage = () => {
             setGameMode={setGameMode}
             queueModes={queueModes}
             queueId={queueId}
+            isQueueOpened={isQueueOpened}
+            setIsQueueOpened={setIsQueueOpened}
           />
           <Divider sx={{ marginTop: 1, marginBottom: 2 }} />
           <QueueList
             queue={queue}
             setQueue={setQueue}
-            gameModeName={gameModeName}
+            queueId={queueId}
             gameMode={gameMode}
-            selectedGameMode={selectedGameMode}
             isStreamer={isStreamer}
             isLoading={isLoading}
           />
-          <footer>
-            <img src={image.logo} className="logo" alt="logo" width={80} />
-            <a href="https://chess.com/home" target="_blank" rel="noreferrer">
+          <Grid container alignItems="end" justifyContent="space-between">
+            <img
+              src={image.logo}
+              className="logo image"
+              alt="logo"
+              width={80}
+            />
+            {isStreamer && !isLoading && queue.length > 0 && (
+              <Tooltip
+                title="Next player"
+                placement="bottom"
+                onClick={handleNextPlayer}
+              >
+                <Grid
+                  item
+                  justifyContent="center"
+                  className="buttonNext"
+                  alignItems="center"
+                  style={{
+                    border: '3px solid #fff',
+                    borderRadius: 200,
+                    padding: 13,
+                    marginBottom: 30,
+                    backgroundColor: '#31542b',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <img
+                    src={image.next}
+                    className="next image"
+                    alt="next"
+                    width={30}
+                    height={30}
+                  />
+                </Grid>
+              </Tooltip>
+            )}
+            <a
+              href="https://chess.com/home"
+              target="_blank"
+              rel="noreferrer"
+              className="image"
+              style={{ marginRight: 20 }}
+            >
               <img
                 src={image.chessLogo}
-                className="chesslogo"
+                className="image"
                 alt="logo"
                 width={80}
               />
             </a>
-          </footer>
+          </Grid>
         </>
-      ) : (
+      ) : streamer === false ? (
         <ErrorPage />
+      ) : (
+        ''
       )}
-    </Container>
+    </Grid>
   );
 };
 

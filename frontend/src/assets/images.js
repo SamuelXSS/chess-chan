@@ -12,6 +12,7 @@ const image = {
   infinity: `${url}/infinity.png`,
   live: `${url}/live.png`,
   trash: `${url}/trash.png`,
+  next: `${url}/next.png`,
 };
 
 export default image;

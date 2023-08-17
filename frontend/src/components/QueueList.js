@@ -7,12 +7,20 @@ import {
   IconButton,
   Badge,
   Skeleton,
+  Avatar,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import './styles.css';
 import { api } from '../services/api';
 
-const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
+const QueueList = ({
+  queue,
+  queueId,
+  isLoading,
+  gameMode,
+  setQueue,
+  isStreamer,
+}) => {
   const [isHovering, setIsHovering] = useState(false);
   const [whoIsHovered, setWhoIsHovered] = useState(0);
 
@@ -26,9 +34,17 @@ const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
     setIsHovering(false);
   };
 
-  const handleRemoveFromQueue = async (userId) => {
+  const handleRemoveFromQueue = async (
+    userId,
+    userPosition,
+    nextPlayerId = null
+  ) => {
     try {
-      await api.delete(`/queue/${userId}/remove`);
+      await api.delete(
+        `/queue/${queueId}/player/${userId}/remove?isDeleting=${
+          userPosition === 0 && queue.length > 1 ? 'true' : 'false'
+        }${nextPlayerId !== null ? `&nextUserId=${nextPlayerId}` : ''}`
+      );
 
       const newQueue = queue.filter((item) => item.id !== userId);
 
@@ -37,14 +53,20 @@ const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
   };
 
   return (
-    <Box height={310} overflow="auto" display="flex" flexDirection="column">
-      {!isLoading && queue && queue.length === 0 && (
-        <Typography variant="body1" className="queueEmpty">
+    <Box
+      height={310}
+      width="96%"
+      overflow="auto"
+      display="flex"
+      flexDirection="column"
+    >
+      {!isLoading && queue.length === 0 && (
+        <Typography variant="body1" className="queueEmpty" textAlign="center">
           The queue is currently empty! 😓
           <br />
           <br />
           <span style={{ fontWeight: 'bold' }}>
-            !join [chess.com_username]
+            !join your_chess_com_username
           </span>{' '}
           to play!
         </Typography>
@@ -76,6 +98,10 @@ const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
                   <b style={{ marginRight: 10, marginLeft: 10 }}>
                     {index + 1}.{' '}
                   </b>
+                  <Avatar
+                    src={q.avatar}
+                    style={{ width: 30, height: 30, marginRight: 5 }}
+                  />
                   {q.title && <span className="playerTitle"> {q.title} </span>}
                   {isStreamer && isHovering && index === whoIsHovered ? (
                     <Link
@@ -106,10 +132,18 @@ const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
                       <Badge badgeContent="LIVE" color="error" />
                     </Grid>
                     {isStreamer && (
-                      <Grid item sx={{ marginLeft: 2 }}>
+                      <Grid item sx={{ marginLeft: 2.5 }}>
                         <IconButton
                           aria-label="delete"
-                          onClick={() => handleRemoveFromQueue(q.id)}
+                          onClick={() =>
+                            handleRemoveFromQueue(
+                              q.id,
+                              index,
+                              index === 0 && queue.length > 1
+                                ? queue[1].id
+                                : null
+                            )
+                          }
                         >
                           <DeleteIcon color="error" />
                         </IconButton>
@@ -121,7 +155,13 @@ const QueueList = ({ queue, isLoading, gameMode, setQueue, isStreamer }) => {
                 <Grid item>
                   <IconButton
                     aria-label="delete"
-                    onClick={() => handleRemoveFromQueue(q.id)}
+                    onClick={() =>
+                      handleRemoveFromQueue(
+                        q.id,
+                        index,
+                        index === 0 && queue.length > 1 ? queue[1].id : null
+                      )
+                    }
                   >
                     <DeleteIcon color="error" />
                   </IconButton>
