@@ -82,6 +82,7 @@ const QueueList = ({
               key={index}
               className="queueContent"
               justifyContent="space-between"
+              style={{ height: 42 }}
               sx={{
                 backgroundColor: '#fff',
                 border: '1px solid transparent',
@@ -127,11 +128,12 @@ const QueueList = ({
               </Grid>
               {index === 0 ? (
                 <Grid item xs={3}>
-                  <Grid container alignItems="center" justifyContent="end">
-                    <Grid
-                      item
-                      style={{ height: 43, marginLeft: !isStreamer ? -30 : 0 }}
-                    >
+                  <Grid
+                    container
+                    alignItems="center"
+                    justifyContent={isStreamer ? 'end' : 'center'}
+                  >
+                    <Grid item>
                       <Badge badgeContent="LIVE" color="error" />
                     </Grid>
                     {isStreamer && (
