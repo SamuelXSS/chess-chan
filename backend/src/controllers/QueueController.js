@@ -2,10 +2,18 @@ import Queue from '../models/Queue.js';
 import Streamer from '../models/Streamer.js';
 import User from '../models/User.js';
 import UserQueue from '../models/UserQueue.js';
+import UserGame from '../models/UserGame.js';
 import { io } from '../server.js';
 import { errorHandler } from '../services/handler.js';
 import { validateChessName, getGameArchieves } from './client/index.js';
-import { createWinnerMessage, formatQueue } from './functions/index.js';
+import {
+  createWinnerMessage,
+  emitBotMessage,
+  emitNextQueuePlayer,
+  formatQueue,
+  getUserQueue,
+} from './functions/index.js';
+import { usersOnQueuesMetric } from '../services/metrics.js';
 
 export default {
   async list(req, res) {
@@ -176,6 +184,8 @@ export default {
 
       io.to(streamerChannel).emit('queue:update', userResponse);
 
+      usersOnQueuesMetric.set(queue.usersOnQueue);
+
       return res.json({
         message: 'User added to queue',
         user: userResponse,
@@ -191,19 +201,7 @@ export default {
       const { isNext, nextUserId, isDeleting } = req.query;
 
       if (isNext && JSON.parse(isNext)) {
-        const userQueue = await UserQueue.findOne({
-          queue: queueId,
-          user: userId,
-        })
-          .populate('user')
-          .populate({
-            path: 'queue',
-            model: 'Queue',
-            populate: {
-              path: 'streamer',
-              model: 'Streamer',
-            },
-          });
+        const userQueue = await getUserQueue();
 
         if (!userQueue) {
           return res.status(404).json({ message: 'Users on queue not found' });
@@ -233,50 +231,32 @@ export default {
           return res.status(404).json({ message: 'No games found' });
         }
 
-        const resultGameMessage = createWinnerMessage(
+        const { resultGameMessage, winner, moves } = createWinnerMessage(
           game,
           streamerChessUsername,
           userChessUsername,
           userTwitchUsername
         );
 
-        await UserQueue.findOneAndRemove({
+        await UserQueue.findOneAndRemove({ user: userId, queue: queueId });
+        await UserGame.create({
           user: userId,
           queue: queueId,
+          winner,
+          moves,
         });
 
         if (nextUserId) {
-          const nextPlayerQueue = await UserQueue.findOne({
-            queue: queueId,
-            user: nextUserId,
-          })
-            .populate('user')
-            .populate({
-              path: 'queue',
-              model: 'Queue',
-              populate: {
-                path: 'streamer',
-                model: 'Streamer',
-              },
-            });
+          const nextPlayerQueue = await getUserQueue();
 
-          io.emit('handleNextQueuePlayer', {
-            channelId: twitchUsername,
-            resultGameMessage,
-            ...(nextPlayerQueue
-              ? `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
-              : {}),
-          });
+          emitNextQueuePlayer(nextPlayerQueue, resultGameMessage);
 
           return res.json({
             message: 'Last user removed from queue and next called',
           });
         }
 
-        io.emit('handleNextQueuePlayer', {
-          channelId: twitchUsername,
-          resultGameMessage,
-        });
+        emitNextQueuePlayer(null, resultGameMessage);
 
         return res.json({
           message: 'Last user removed from queue and next called',
@@ -285,46 +265,16 @@ export default {
         const removedUserQueue = await UserQueue.findOneAndRemove({
           user: userId,
           queue: queueId,
-        })
-          .populate('user')
-          .populate({
-            path: 'queue',
-            model: 'Queue',
-            populate: {
-              path: 'streamer',
-              model: 'Streamer',
-            },
-          });
+        }).populate(populateOptions);
 
         if (!removedUserQueue) {
           return res.status(404).json({ message: 'UserQueue not found' });
         }
 
         if (isDeleting && JSON.parse(isDeleting) && nextUserId) {
-          const {
-            queue: {
-              streamer: { twitchUsername },
-            },
-          } = removedUserQueue;
+          const nextPlayerQueue = await getUserQueue();
 
-          const nextPlayerQueue = await UserQueue.findOne({
-            queue: queueId,
-            user: nextUserId,
-          })
-            .populate('user')
-            .populate({
-              path: 'queue',
-              model: 'Queue',
-              populate: {
-                path: 'streamer',
-                model: 'Streamer',
-              },
-            });
-
-          io.emit('handleSendBotMessage', {
-            channelId: twitchUsername,
-            message: `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`,
-          });
+          emitBotMessage(nextPlayerQueue);
         }
 
         return res.json({ message: 'User removed from the queue' });

@@ -14,6 +14,8 @@ import connectToDB from './database/connection.js';
 import routes from './routes.js';
 import morgan from 'morgan';
 import { env } from 'custom-env';
+import User from './models/User.js';
+import { totalUsersMetric } from './services/metrics.js';
 env();
 
 export const app = express();
@@ -48,6 +50,12 @@ io.on('connection', (socket) => {
   newPlayerOnQueue(socket);
   joinQueue(socket);
   handleSendBotMessage(socket);
+});
+
+app.use(async (err, req, res, next) => {
+  const users = await User.countDocuments();
+
+  totalUsersMetric.set(users);
 });
 
 const port = 3000;
