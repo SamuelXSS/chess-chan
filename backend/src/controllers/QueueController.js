@@ -247,7 +247,7 @@ export default {
         });
 
         if (nextUserId) {
-          const nextPlayerQueue = await getUserQueue();
+          const nextPlayerQueue = await getUserQueue(queueId, userId);
 
           emitNextQueuePlayer(nextPlayerQueue, resultGameMessage);
 
@@ -256,7 +256,10 @@ export default {
           });
         }
 
-        emitNextQueuePlayer(null, resultGameMessage);
+        io.emit('handleSendBotMessage', {
+          channelId: twitchUsername,
+          message: resultGameMessage,
+        });
 
         return res.json({
           message: 'Last user removed from queue and next called',
@@ -265,7 +268,14 @@ export default {
         const removedUserQueue = await UserQueue.findOneAndRemove({
           user: userId,
           queue: queueId,
-        }).populate(populateOptions);
+        }).populate({
+          path: 'queue',
+          model: 'Queue',
+          populate: {
+            path: 'streamer',
+            model: 'Streamer',
+          },
+        });
 
         if (!removedUserQueue) {
           return res.status(404).json({ message: 'UserQueue not found' });
