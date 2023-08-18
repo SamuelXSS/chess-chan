@@ -90,7 +90,6 @@ const QueueList = ({
                 margin: 0.2,
                 width: '96%',
               }}
-              style={{ height: 43, marginLeft: !isStreamer ? -30 : 0 }}
               onMouseOver={(e) => handleMouseOver(e, index)}
               onMouseOut={(e) => handleMouseOut(e, index)}
             >
@@ -129,7 +128,10 @@ const QueueList = ({
               {index === 0 ? (
                 <Grid item xs={3}>
                   <Grid container alignItems="center" justifyContent="end">
-                    <Grid item>
+                    <Grid
+                      item
+                      style={{ height: 43, marginLeft: !isStreamer ? -30 : 0 }}
+                    >
                       <Badge badgeContent="LIVE" color="error" />
                     </Grid>
                     {isStreamer && (
