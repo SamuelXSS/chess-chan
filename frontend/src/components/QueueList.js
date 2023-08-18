@@ -82,7 +82,7 @@ const QueueList = ({
               key={index}
               className="queueContent"
               justifyContent="space-between"
-              style={{ height: 42, overflow: 'hidden' }}
+              style={{ height: 42 }}
               sx={{
                 backgroundColor: '#fff',
                 border: '1px solid transparent',
@@ -128,16 +128,12 @@ const QueueList = ({
               </Grid>
               {index === 0 ? (
                 <Grid item xs={3}>
-                  <Grid
-                    container
-                    alignItems="center"
-                    justifyContent={isStreamer ? 'end' : 'center'}
-                  >
+                  <Grid container alignItems="center" justifyContent="center">
                     <Grid item>
                       <Badge badgeContent="LIVE" color="error" />
                     </Grid>
                     {isStreamer && (
-                      <Grid item sx={{ marginLeft: isStreamer ? 2.5 : 0 }}>
+                      <Grid item sx={{ marginLeft: 2.5 }}>
                         <IconButton
                           aria-label="delete"
                           onClick={() =>
@@ -155,6 +151,21 @@ const QueueList = ({
                       </Grid>
                     )}
                   </Grid>
+                </Grid>
+              ) : isStreamer ? (
+                <Grid item>
+                  <IconButton
+                    aria-label="delete"
+                    onClick={() =>
+                      handleRemoveFromQueue(
+                        q.id,
+                        index,
+                        index === 0 && queue.length > 1 ? queue[1].id : null
+                      )
+                    }
+                  >
+                    <DeleteIcon color="error" />
+                  </IconButton>
                 </Grid>
               ) : null}
             </Grid>
