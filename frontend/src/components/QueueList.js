@@ -137,7 +137,7 @@ const QueueList = ({
                       <Badge badgeContent="LIVE" color="error" />
                     </Grid>
                     {isStreamer && (
-                      <Grid item sx={{ marginLeft: 2.5 }}>
+                      <Grid item sx={{ marginLeft: isStreamer ? 2.5 : 0 }}>
                         <IconButton
                           aria-label="delete"
                           onClick={() =>
@@ -155,21 +155,6 @@ const QueueList = ({
                       </Grid>
                     )}
                   </Grid>
-                </Grid>
-              ) : !isStreamer ? (
-                <Grid item>
-                  <IconButton
-                    aria-label="delete"
-                    onClick={() =>
-                      handleRemoveFromQueue(
-                        q.id,
-                        index,
-                        index === 0 && queue.length > 1 ? queue[1].id : null
-                      )
-                    }
-                  >
-                    <DeleteIcon color="error" />
-                  </IconButton>
                 </Grid>
               ) : null}
             </Grid>
