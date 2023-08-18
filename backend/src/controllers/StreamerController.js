@@ -89,7 +89,7 @@ export default {
         chessUsername: chessFormattedUsername,
         userId,
         channelId,
-        twitchUsername: data[0].display_name,
+        twitchUsername: data[0].display_name.toLowerCase(),
         language,
         rating: {
           bullet: bulletRating,

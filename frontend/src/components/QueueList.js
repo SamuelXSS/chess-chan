@@ -90,6 +90,7 @@ const QueueList = ({
                 margin: 0.2,
                 width: '96%',
               }}
+              style={{ height: 43, marginLeft: !isStreamer ? -30 : 0 }}
               onMouseOver={(e) => handleMouseOver(e, index)}
               onMouseOut={(e) => handleMouseOut(e, index)}
             >
@@ -151,7 +152,7 @@ const QueueList = ({
                     )}
                   </Grid>
                 </Grid>
-              ) : isStreamer ? (
+              ) : !isStreamer ? (
                 <Grid item>
                   <IconButton
                     aria-label="delete"

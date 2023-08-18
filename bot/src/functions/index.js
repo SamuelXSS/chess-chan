@@ -1,4 +1,5 @@
 const handleErrorMessage = (client, channel, userstate, err) => {
+  console.log(channel);
   try {
     let errData;
 
