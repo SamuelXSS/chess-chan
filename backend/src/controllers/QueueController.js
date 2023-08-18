@@ -201,7 +201,7 @@ export default {
       const { isNext, nextUserId, isDeleting } = req.query;
 
       if (isNext && JSON.parse(isNext)) {
-        const userQueue = await getUserQueue();
+        const userQueue = await getUserQueue(queueId, userId);
 
         if (!userQueue) {
           return res.status(404).json({ message: 'Users on queue not found' });

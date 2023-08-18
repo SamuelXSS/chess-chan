@@ -76,7 +76,7 @@ const formatQueue = (queue) => {
   });
 };
 
-const getUserQueue = async () => {
+const getUserQueue = async (queueId, userId) => {
   const populateOptions = [
     { path: 'user' },
     {
