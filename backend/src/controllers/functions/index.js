@@ -1,3 +1,6 @@
+import UserQueue from '../../models/UserQueue.js';
+import { io } from '../../server.js';
+
 const createWinnerMessage = (
   game,
   streamerChessUsername,
@@ -21,9 +24,17 @@ const createWinnerMessage = (
     return "@${userTwitchUsername} it's a draw! Nice game!";
   }
   if (winnerUsername === userChessUsername) {
-    return `@${userTwitchUsername}, you won in ${moves} moves, congratulations! 🏆 ${winnerPiece} ${winnerUsername} x ${loserUsername} ${loserPiece}`;
+    return {
+      resultGameMessage: `@${userTwitchUsername}, you won in ${moves} moves, congratulations! 🏆 ${winnerPiece} ${winnerUsername} x ${loserUsername} ${loserPiece}`,
+      winner: winnerUsername,
+      moves,
+    };
   } else {
-    return `${streamerChessUsername} won in ${moves} moves! Good luck next time, @${userTwitchUsername}! 🏆 ${winnerPiece} ${winnerUsername} x ${loserUsername} ${loserPiece}`;
+    return {
+      resultGameMessage: `${streamerChessUsername} won in ${moves} moves! Good luck next time, @${userTwitchUsername}! 🏆 ${winnerPiece} ${winnerUsername} x ${loserUsername} ${loserPiece}`,
+      winner: winnerUsername,
+      moves,
+    };
   }
 };
 
@@ -65,4 +76,57 @@ const formatQueue = (queue) => {
   });
 };
 
-export { createWinnerMessage, getLatestEvent, formatQueue };
+const getUserQueue = async () => {
+  const populateOptions = [
+    { path: 'user' },
+    {
+      path: 'queue',
+      model: 'Queue',
+      populate: {
+        path: 'streamer',
+        model: 'Streamer',
+      },
+    },
+  ];
+
+  return await UserQueue.findOne({
+    queue: queueId,
+    user: userId,
+  }).populate(populateOptions);
+};
+
+const emitNextQueuePlayer = (nextPlayerQueue, resultGameMessage) => {
+  const {
+    user: { twitchUsername },
+  } = nextPlayerQueue;
+
+  io.emit('handleNextQueuePlayer', {
+    channelId: twitchUsername,
+    resultGameMessage,
+    ...(nextPlayerQueue
+      ? `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+      : {}),
+  });
+};
+
+const emitBotMessage = (nextPlayerQueue) => {
+  const {
+    queue: {
+      streamer: { twitchUsername },
+    },
+  } = nextPlayerQueue;
+
+  io.emit('handleSendBotMessage', {
+    channelId: twitchUsername,
+    message: `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`,
+  });
+};
+
+export {
+  createWinnerMessage,
+  getLatestEvent,
+  formatQueue,
+  getUserQueue,
+  emitNextQueuePlayer,
+  emitBotMessage,
+};

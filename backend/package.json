@@ -10,6 +10,7 @@
     "start:prod": "NODE_ENV=prod nodemon src/server.js"
   },
   "dependencies": {
+    "@pm2/io": "^5.0.0",
     "axios": "^1.4.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
