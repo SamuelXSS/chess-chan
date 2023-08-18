@@ -157,7 +157,7 @@ const PanelPage = () => {
                   style={{
                     border: '3px solid #fff',
                     borderRadius: 200,
-                    padding: 13,
+                    padding: 10,
                     marginBottom: 30,
                     backgroundColor: '#31542b',
                     cursor: 'pointer',
@@ -168,7 +168,7 @@ const PanelPage = () => {
                     className="next image"
                     alt="next"
                     width={30}
-                    height={30}
+                    height={25}
                   />
                 </Grid>
               </Tooltip>
