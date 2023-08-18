@@ -82,7 +82,7 @@ const QueueList = ({
               key={index}
               className="queueContent"
               justifyContent="space-between"
-              style={{ height: 42 }}
+              style={{ height: 42, overflow: 'hidden' }}
               sx={{
                 backgroundColor: '#fff',
                 border: '1px solid transparent',
