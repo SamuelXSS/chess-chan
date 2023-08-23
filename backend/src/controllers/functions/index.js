@@ -100,22 +100,16 @@ const emitNextQueuePlayer = (nextPlayerQueue, resultGameMessage) => {
 
   io.emit('handleNextQueuePlayer', {
     channelId: twitchUsername,
-    resultGameMessage,
+    ...(resultGameMessage ? resultGameMessage : {}),
     ...(nextPlayerQueue
       ? `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
       : {}),
   });
 };
 
-const emitBotMessage = (nextPlayerQueue, message) => {
-  const {
-    queue: {
-      streamer: { twitchUsername },
-    },
-  } = nextPlayerQueue;
-
+const emitBotMessage = (channel, message) => {
   io.emit('handleSendBotMessage', {
-    channelId: twitchUsername,
+    channelId: channel,
     message,
   });
 };

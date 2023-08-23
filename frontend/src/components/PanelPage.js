@@ -23,6 +23,7 @@ const PanelPage = () => {
   const [queueSize, setQueueSize] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isQueueOpened, setIsQueueOpened] = useState(true);
+  const [userRemoved, setUserRemoved] = useState(null);
   const [twitch] = useState(window.Twitch.ext);
 
   const fetchData = async () => {
@@ -69,9 +70,15 @@ const PanelPage = () => {
     setQueue((prevState) => [...prevState, data]);
   };
 
+  const handleRemoveUser = (data) => {
+    const newQueue = queue.filter((item) => item.id !== data.user._id);
+
+    setQueue(newQueue);
+  };
+
   useEffect(() => {
     fetchData();
-  }, [twitch, streamer?.twitchUsername, selectedGameMode]);
+  }, [twitch, streamer?.twitchUsername, selectedGameMode, userRemoved]);
 
   useEffect(() => {
     socket.emit('queue:join', streamer?.twitchUsername);
@@ -82,12 +89,21 @@ const PanelPage = () => {
     };
   }, [streamer?.twitchUsername]);
 
+  useEffect(() => {
+    socket.emit('queue:join', streamer?.twitchUsername);
+    socket.on('userRemovedFromQueue', handleRemoveUser);
+
+    return () => {
+      socket.off('userRemovedFromQueue', handleRemoveUser);
+    };
+  }, [streamer?.twitchUsername]);
+
   const handleNextPlayer = async () => {
     try {
       await api.delete(
-        `/queue/${queueId}/player/${queue[0].id}/remove?isNext=true${
-          queue[1] ? `&nextUserId=${queue[1].id}` : ''
-        }`
+        `/queue/${queueId}/player/${queue[0].id}/remove?isNext=${
+          queue[1] ? 'true' : 'false'
+        }${queue[1] ? `&nextUserId=${queue[1].id}` : ''}`
       );
 
       const newQueue = queue.filter((item) => item.id !== queue[0].id);
@@ -110,7 +126,7 @@ const PanelPage = () => {
         paddingLeft: 10,
       }}
     >
-      {streamer || isLoading ? (
+      {!isLoading ? (
         <>
           <PanelHeader
             gameModeName={gameModeName}
