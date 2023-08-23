@@ -10,6 +10,15 @@ const getPlayer = async (username) => {
   }
 };
 
+const removeFromQueue = async (queueId, userId) => {
+  try {
+    await api.delete(`/queue/${queueId}/player/${userId}/leave`);
+  } catch (error) {
+    const { message, status } = error.response.data;
+    throw new Error(JSON.stringify({ message, statusCode: status }));
+  }
+};
+
 const getPlayerStats = async (username) => {
   try {
     const response = await chessApi.get(`/pub/player/${username}/stats`);
@@ -39,11 +48,24 @@ const getQueue = async (channel) => {
     const twitchUsername = channel.split('#')[1];
     const {
       data: { streamer },
-    } = await api.get(`/streamer?twitchUsername=${twitchUsername}`);
+    } = await api.get(
+      `/streamer?twitchUsername=${twitchUsername.toLowerCase()}`
+    );
     const {
       data: { usersOnQueue, queue, size, isClosed },
     } = await api.get(`/queue?queueId=${streamer.queueId}`);
-    return { usersOnQueue, queue, size, isClosed };
+    return { usersOnQueue, queue, size, isClosed, queueId: streamer.queueId };
+  } catch (error) {
+    const { message, status } = error.response.data;
+    throw new Error(JSON.stringify({ message, statusCode: status }));
+  }
+};
+
+const getUser = async (username) => {
+  try {
+    const user = await api.get(`/user?username=${username}`);
+
+    return user.data;
   } catch (error) {
     const { message, status } = error.response.data;
     throw new Error(JSON.stringify({ message, statusCode: status }));
@@ -58,6 +80,7 @@ const getStreamersChannels = async () => {
     const channels = streamers.map((streamer) => streamer.twitchUsername);
     return channels;
   } catch (error) {
+    console.log(error);
     const { message, status } = error.response.data;
     throw new Error(JSON.stringify({ message, statusCode: status }));
   }
@@ -68,5 +91,7 @@ export {
   getPlayerStats,
   addToQueue,
   getQueue,
+  getUser,
+  removeFromQueue,
   getStreamersChannels,
 };

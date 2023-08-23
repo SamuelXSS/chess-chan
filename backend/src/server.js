@@ -8,6 +8,7 @@ import {
   newChannelInserted,
   newPlayerOnQueue,
   handleSendBotMessage,
+  userRemovedFromQueue,
 } from './services/socket.js';
 import { Server } from 'socket.io';
 import connectToDB from './database/connection.js';
@@ -48,6 +49,7 @@ io.on('connection', (socket) => {
   socketLogger(socket);
   newChannelInserted(socket);
   newPlayerOnQueue(socket);
+  userRemovedFromQueue(socket);
   joinQueue(socket);
   handleSendBotMessage(socket);
 });

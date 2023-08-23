@@ -10,6 +10,11 @@ const newChannelInserted = (socket) =>
     io.emit('newChannelInserted', data)
   );
 
+const userRemovedFromQueue = (socket) =>
+  socket.on('userRemovedFromQueue', (data) =>
+    io.emit('userRemovedFromQueue', data)
+  );
+
 const handleSendBotMessage = (socket) =>
   socket.on('handleSendBotMessage', (data) =>
     io.emit('handleSendBotMessage', data)
@@ -34,6 +39,7 @@ export {
   socketLogger,
   joinQueue,
   newChannelInserted,
+  userRemovedFromQueue,
   newPlayerOnQueue,
   handleSendBotMessage,
 };

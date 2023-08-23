@@ -2,8 +2,10 @@ import express from 'express';
 import StreamerController from './controllers/StreamerController.js';
 import QueueController from './controllers/QueueController.js';
 import QueueModeController from './controllers/QueueModeController.js';
+import UserController from './controllers/UserController.js';
 
 const routes = express.Router();
+routes.get('/user', UserController.show);
 
 routes.get('/streamers', StreamerController.list);
 routes.get('/streamer', StreamerController.show);
@@ -18,6 +20,7 @@ routes.delete(
   '/queue/:queueId/player/:userId/remove',
   QueueController.removeFromQueue
 );
+routes.delete('/queue/:queueId/player/:userId/leave', QueueController.leave);
 
 routes.get('/queueMode', QueueModeController.list);
 routes.get('/queueMode', QueueModeController.show);

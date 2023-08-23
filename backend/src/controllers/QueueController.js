@@ -200,35 +200,44 @@ export default {
       const { userId, queueId } = req.params;
       const { isNext, nextUserId, isDeleting } = req.query;
 
+      const userQueue = await getUserQueue(queueId, userId);
+
+      if (!userQueue) {
+        return res.status(404).json({ message: 'User on queue not found' });
+      }
+
+      const {
+        user: {
+          chessUsername: userChessUsername,
+          twitchUsername: userTwitchUsername,
+        },
+        queue: {
+          streamer: {
+            twitchUsername: channelId,
+            chessUsername: streamerChessUsername,
+            chessUserId,
+          },
+        },
+      } = userQueue;
+
       if (isNext && JSON.parse(isNext)) {
-        const userQueue = await getUserQueue(queueId, userId);
-
-        if (!userQueue) {
-          return res.status(404).json({ message: 'Users on queue not found' });
-        }
-
-        const {
-          user: {
-            chessUsername: userChessUsername,
-            twitchUsername: userTwitchUsername,
-          },
-          queue: {
-            streamer: {
-              twitchUsername,
-              chessUsername: streamerChessUsername,
-              chessUserId,
-            },
-          },
-        } = userQueue;
-
         const game = await getGameArchieves(
           streamerChessUsername,
           chessUserId,
           userChessUsername
         );
 
-        if (game === 'No games found') {
-          return res.status(404).json({ message: 'No games found' });
+        await UserQueue.findOneAndRemove({ user: userId, queue: queueId });
+
+        if (game === 'No games found' && nextUserId) {
+          const nextPlayerQueue = await getUserQueue(queueId, userId);
+
+          io.to(channelId).emit('userRemovedFromQueue', removedUserQueue);
+
+          return emitBotMessage(
+            channelId,
+            `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+          );
         }
 
         const { resultGameMessage, winner, moves } = createWinnerMessage(
@@ -238,7 +247,6 @@ export default {
           userTwitchUsername
         );
 
-        await UserQueue.findOneAndRemove({ user: userId, queue: queueId });
         await UserGame.create({
           user: userId,
           queue: queueId,
@@ -249,17 +257,16 @@ export default {
         if (nextUserId) {
           const nextPlayerQueue = await getUserQueue(queueId, userId);
 
-          emitNextQueuePlayer(nextPlayerQueue, resultGameMessage);
-
-          return res.json({
-            message: 'Last user removed from queue and next called',
-          });
+          emitBotMessage(channelId, resultGameMessage);
+          emitBotMessage(
+            channelId,
+            `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+          );
+        } else {
+          emitBotMessage(channelId, resultGameMessage);
         }
 
-        io.emit('handleSendBotMessage', {
-          channelId: twitchUsername,
-          message: resultGameMessage,
-        });
+        io.to(channelId).emit('userRemovedFromQueue', removedUserQueue);
 
         return res.json({
           message: 'Last user removed from queue and next called',
@@ -281,11 +288,52 @@ export default {
           return res.status(404).json({ message: 'UserQueue not found' });
         }
 
-        if (isDeleting && JSON.parse(isDeleting) && nextUserId) {
-          const nextPlayerQueue = await getUserQueue();
+        const game = await getGameArchieves(
+          streamerChessUsername,
+          chessUserId,
+          userChessUsername
+        );
 
-          emitBotMessage(nextPlayerQueue);
+        await UserQueue.findOneAndRemove({ user: userId, queue: queueId });
+
+        if (game === 'No games found' && nextUserId) {
+          const nextPlayerQueue = await getUserQueue(queueId, userId);
+
+          io.to(channelId).emit('userRemovedFromQueue', removedUserQueue);
+
+          return emitBotMessage(
+            channelId,
+            `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+          );
         }
+
+        const { resultGameMessage, winner, moves } = createWinnerMessage(
+          game,
+          streamerChessUsername,
+          userChessUsername,
+          userTwitchUsername
+        );
+
+        await UserGame.create({
+          user: userId,
+          queue: queueId,
+          winner,
+          moves,
+        });
+
+        if (nextUserId) {
+          const nextPlayerQueue = await getUserQueue(queueId, userId);
+
+          emitBotMessage(channelId, resultGameMessage);
+          emitBotMessage(
+            channelId,
+            `@${nextPlayerQueue.user.twitchUsername}, you are the next one on queue, get ready!`
+          );
+        } else {
+          emitBotMessage(channelId, resultGameMessage);
+        }
+
+        io.to(channelId).emit('userRemovedFromQueue', removedUserQueue);
 
         return res.json({ message: 'User removed from the queue' });
       }
@@ -319,6 +367,41 @@ export default {
       return res
         .status(500)
         .json({ message: 'Internal server error', error: err });
+    }
+  },
+  async leave(req, res) {
+    const { userId, queueId } = req.params;
+
+    try {
+      const removedUser = await UserQueue.findOneAndRemove({
+        user: userId,
+        queue: queueId,
+      }).populate({
+        path: 'queue',
+        model: 'Queue',
+        populate: {
+          path: 'streamer',
+          model: 'Streamer',
+        },
+      });
+
+      if (!removedUser) {
+        return res.status(404).json({ message: 'User on queue not found' });
+      }
+
+      const {
+        queue: {
+          streamer: { twitchUsername: channelId },
+        },
+      } = removedUser;
+
+      io.to(channelId).emit('userRemovedFromQueue', removedUser);
+
+      return res.json({
+        message: `User ${removedUser.twitchUsername} left the queue`,
+      });
+    } catch (err) {
+      return errorHandler(500, `Internal server error: ${err}`, res);
     }
   },
 };
